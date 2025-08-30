@@ -9,7 +9,7 @@ public class ShamirSecret {
     public static void main(String[] args) throws Exception {
         // Read JSON file
         ObjectMapper mapper = new ObjectMapper();
-        JsonNode root = mapper.readTree(new File("src/main/resources/input.json"));
+        JsonNode root = mapper.readTree(new File("src/main/resources/input2.json"));
 
         int n = root.get("keys").get("n").asInt();
         int k = root.get("keys").get("k").asInt();
