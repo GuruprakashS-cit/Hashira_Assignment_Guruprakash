@@ -7,16 +7,37 @@ import java.util.*;
 public class ShamirSecret {
 
     public static void main(String[] args) throws Exception {
-        // Read JSON file
+        File folder = new File("src/main/resources");
+        File[] files = folder.listFiles((dir, name) -> name.endsWith(".json"));
+
+        if (files == null || files.length == 0) {
+            System.out.println("No JSON files found in resources folder.");
+            return;
+        }
+
         ObjectMapper mapper = new ObjectMapper();
-        JsonNode root = mapper.readTree(new File("src/main/resources/input2.json"));
 
-        int n = root.get("keys").get("n").asInt();
-        int k = root.get("keys").get("k").asInt();
+        for (File file : files) {
+            System.out.println("Processing file: " + file.getName());
 
+            JsonNode root = mapper.readTree(file);
+
+            int n = root.get("keys").get("n").asInt();
+            int k = root.get("keys").get("k").asInt();
+
+            List<Point> points = parsePoints(root);
+            List<Point> subset = points.subList(0, k);
+
+            BigInteger secret = lagrangeInterpolation(subset);
+            System.out.println("Secret from " + file.getName() + " = " + secret);
+            System.out.println("--------------------------------------");
+        }
+    }
+
+    static List<Point> parsePoints(JsonNode root) {
         List<Point> points = new ArrayList<>();
-
         Iterator<String> fieldNames = root.fieldNames();
+
         while (fieldNames.hasNext()) {
             String key = fieldNames.next();
             if (key.equals("keys")) continue;
@@ -25,15 +46,10 @@ public class ShamirSecret {
             int base = Integer.parseInt(root.get(key).get("base").asText());
             String valueStr = root.get(key).get("value").asText();
 
-            BigInteger y = new BigInteger(valueStr, base); // convert base → decimal
+            BigInteger y = new BigInteger(valueStr, base);
             points.add(new Point(x, y));
         }
-
-        // Take first k points
-        List<Point> subset = points.subList(0, k);
-
-        BigInteger secret = lagrangeInterpolation(subset);
-        System.out.println("Secret = " + secret);
+        return points;
     }
 
     static BigInteger lagrangeInterpolation(List<Point> points) {
@@ -50,7 +66,7 @@ public class ShamirSecret {
                 if (i == j) continue;
                 BigInteger xj = BigInteger.valueOf(points.get(j).x);
 
-                numerator = numerator.multiply(xj.negate());   // multiply by -xj
+                numerator = numerator.multiply(xj.negate());   // -xj
                 denominator = denominator.multiply(xi.subtract(xj));
             }
 
